@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cyber Snake Academy</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #06111f;
+      --panel: rgba(9, 25, 45, 0.88);
+      --cyan: #38e8ff;
+      --green: #4dff91;
+      --yellow: #ffd166;
+      --red: #ff5d73;
+      --text: #f3fbff;
+      --muted: #a9bfd0;
+      --tile: 24px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 20% 10%, rgba(56, 232, 255, 0.2), transparent 30%),
+        radial-gradient(circle at 85% 90%, rgba(77, 255, 145, 0.18), transparent 30%),
+        linear-gradient(135deg, #03101d 0%, var(--bg) 55%, #071829 100%);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    .app {
+      width: min(95vw, 980px);
+      padding: 24px;
+    }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 5vw, 4rem);
+      letter-spacing: -0.06em;
+      line-height: 0.95;
+      text-shadow: 0 0 24px rgba(56, 232, 255, 0.4);
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      color: var(--muted);
+      max-width: 620px;
+    }
+
+    .stats {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .stat {
+      min-width: 112px;
+      padding: 10px 14px;
+      border: 1px solid rgba(56, 232, 255, 0.28);
+      border-radius: 16px;
+      background: var(--panel);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .stat strong {
+      display: block;
+      margin-top: 3px;
+      font-size: 1.35rem;
+    }
+
+    .stage {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr 280px;
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    canvas {
+      width: 100%;
+      max-width: 720px;
+      aspect-ratio: 1 / 1;
+      border: 2px solid rgba(56, 232, 255, 0.42);
+      border-radius: 24px;
+      background: #071524;
+      box-shadow: 0 0 0 8px rgba(56, 232, 255, 0.05), 0 24px 80px rgba(0, 0, 0, 0.45);
+    }
+
+    aside {
+      padding: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      background: var(--panel);
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+    }
+
+    aside h2 { margin: 0 0 10px; font-size: 1.2rem; }
+    aside p, aside li { color: var(--muted); line-height: 1.5; }
+    kbd {
+      padding: 2px 7px;
+      border-radius: 7px;
+      color: #06111f;
+      background: var(--cyan);
+      font-weight: 800;
+    }
+
+    button {
+      border: 0;
+      border-radius: 14px;
+      padding: 12px 16px;
+      color: #03101d;
+      background: linear-gradient(135deg, var(--cyan), var(--green));
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 12px 30px rgba(56, 232, 255, 0.22);
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:focus-visible { outline: 3px solid var(--yellow); outline-offset: 3px; }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      place-items: center;
+      padding: 18px;
+      background: rgba(1, 8, 15, 0.78);
+      backdrop-filter: blur(8px);
+      z-index: 10;
+    }
+
+    .overlay.show { display: grid; }
+
+    .modal {
+      width: min(92vw, 700px);
+      padding: 28px;
+      border: 1px solid rgba(56, 232, 255, 0.38);
+      border-radius: 28px;
+      background: linear-gradient(180deg, rgba(9, 25, 45, 0.98), rgba(4, 15, 28, 0.98));
+      box-shadow: 0 30px 100px rgba(0, 0, 0, 0.65);
+    }
+
+    .badge {
+      display: inline-flex;
+      margin-bottom: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      color: #03101d;
+      background: var(--yellow);
+      font-size: 0.78rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .modal h2 { margin: 0 0 12px; font-size: clamp(1.45rem, 4vw, 2.2rem); }
+    .modal p { color: var(--muted); line-height: 1.55; }
+
+    .answers {
+      display: grid;
+      gap: 10px;
+      margin: 20px 0 0;
+    }
+
+    .answer {
+      width: 100%;
+      text-align: left;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: none;
+    }
+
+    .answer:hover { background: rgba(56, 232, 255, 0.12); }
+    .answer.correct { border-color: var(--green); background: rgba(77, 255, 145, 0.15); }
+    .answer.wrong { border-color: var(--red); background: rgba(255, 93, 115, 0.13); }
+
+    .result {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.07);
+      font-size: 1.15rem;
+    }
+
+    .validated { color: var(--green); font-weight: 900; }
+    .not-validated { color: var(--yellow); font-weight: 900; }
+
+    @media (max-width: 860px) {
+      .stage { grid-template-columns: 1fr; }
+      aside { order: -1; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div>
+        <h1>Cyber Snake Academy</h1>
+        <p class="subtitle">Mange 10 briques de connaissance. Chaque brique débloque une question cyber : IAM, GRC, SOC ou sécurité de l'IA.</p>
+      </div>
+      <div class="stats" aria-live="polite">
+        <div class="stat"><span>Briques</span><strong id="progress">0/10</strong></div>
+        <div class="stat"><span>Bonnes réponses</span><strong id="score">0</strong></div>
+      </div>
+    </header>
+
+    <section class="stage">
+      <canvas id="game" width="600" height="600" aria-label="Plateau du jeu du serpent"></canvas>
+      <aside>
+        <h2>Mission</h2>
+        <p>Déplace le serpent pour collecter les briques. Le jeu se met en pause à chaque question.</p>
+        <ul>
+          <li><kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> ou <kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd></li>
+          <li><kbd>Espace</kbd> pour démarrer / reprendre</li>
+          <li>Objectif : au moins 9 bonnes réponses sur 10.</li>
+        </ul>
+        <button id="startButton">Démarrer la partie</button>
+      </aside>
+    </section>
+  </main>
+
+  <div class="overlay show" id="overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal" id="modalContent"></div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const progressEl = document.getElementById('progress');
+    const overlay = document.getElementById('overlay');
+    const modalContent = document.getElementById('modalContent');
+    const startButton = document.getElementById('startButton');
+
+    const gridSize = 25;
+    const tile = canvas.width / gridSize;
+    const targetQuestions = 10;
+    const tickMs = 115;
+
+    const questionBank = [
+      { theme: 'IAM', q: 'Quel principe limite les droits d\'un utilisateur au strict nécessaire ?', a: ['Le partage systématique des comptes administrateurs', 'Le moindre privilège appliqué seulement aux administrateurs', 'Le moindre privilège pour chaque identité, humaine ou machine'], correct: 2 },
+      { theme: 'IAM', q: 'Quel facteur renforce le mieux une authentification par mot de passe ?', a: ['Réutiliser le même mot de passe long partout', 'Ajouter une question secrète facile à mémoriser', 'Ajouter un second facteur indépendant comme une clé FIDO2'], correct: 2 },
+      { theme: 'IAM', q: 'Que doit vérifier une revue périodique des accès ?', a: ['La couleur préférée des utilisateurs', 'Que les accès historiques semblent toujours pratiques', 'Que chaque droit reste justifié par un besoin métier actuel'], correct: 2 },
+      { theme: 'IAM', q: 'Pourquoi séparer les comptes standards et privilégiés ?', a: ['Pour doubler le nombre de licences sans bénéfice', 'Pour rendre les mots de passe plus courts', 'Pour réduire l\'impact si le compte quotidien est compromis'], correct: 2 },
+      { theme: 'IAM', q: 'Que signifie le provisionnement automatisé des identités ?', a: ['Créer tous les comptes à la main dans un tableur', 'Créer des comptes puis les supprimer seulement une fois par an', 'Créer, modifier et désactiver les accès selon le cycle de vie RH'], correct: 2 },
+      { theme: 'IAM', q: 'Quel est un risque majeur des comptes orphelins ?', a: ['Ils améliorent la traçabilité', 'Ils ralentissent uniquement les connexions légitimes', 'Ils peuvent conserver des accès exploitables après un départ'], correct: 2 },
+      { theme: 'IAM', q: 'À quoi sert le SSO bien configuré ?', a: ['À supprimer tout contrôle d\'accès', 'À remplacer toutes les sauvegardes', 'À centraliser l\'authentification et faciliter les politiques cohérentes'], correct: 2 },
+      { theme: 'IAM', q: 'Quel contrôle protège le mieux une action très sensible ?', a: ['Aucun contrôle si l\'utilisateur est connu', 'Un simple nom d\'utilisateur public', 'Une élévation temporaire avec validation et journalisation'], correct: 2 },
+      { theme: 'GRC', q: 'Que décrit généralement une analyse de risques ?', a: ['Une liste de slogans marketing', 'Uniquement les antivirus installés', 'Les menaces, vulnérabilités, impacts et mesures de traitement'], correct: 2 },
+      { theme: 'GRC', q: 'Quel est le rôle d\'une politique de sécurité ?', a: ['Décorer l\'intranet', 'Remplacer toute formation utilisateur', 'Fixer les règles et responsabilités de protection de l\'information'], correct: 2 },
+      { theme: 'GRC', q: 'Que signifie la conformité en cybersécurité ?', a: ['Être invulnérable', 'Cocher des cases sans preuve', 'Démontrer le respect d\'exigences légales, normatives ou contractuelles'], correct: 2 },
+      { theme: 'GRC', q: 'Pourquoi conserver des preuves d\'audit ?', a: ['Pour encombrer le stockage', 'Pour éviter de corriger les écarts', 'Pour démontrer l\'exécution effective des contrôles'], correct: 2 },
+      { theme: 'GRC', q: 'Qu\'est-ce qu\'un plan de traitement des risques ?', a: ['Un planning de vacances', 'Une liste de risques acceptés par défaut', 'Les décisions pour réduire, transférer, éviter ou accepter les risques'], correct: 2 },
+      { theme: 'GRC', q: 'Quel indicateur est utile au pilotage cyber ?', a: ['Le nombre de cafés bus par l\'équipe', 'Le nombre total de fichiers sans contexte', 'Le taux de correction des vulnérabilités critiques dans les délais'], correct: 2 },
+      { theme: 'GRC', q: 'Pourquoi classifier les données ?', a: ['Pour rendre tous les documents publics', 'Pour choisir une police de caractères', 'Pour adapter les protections au niveau de sensibilité'], correct: 2 },
+      { theme: 'SOC', q: 'Quelle est la mission principale d\'un SOC ?', a: ['Créer uniquement des logos de sécurité', 'Remplacer le support informatique', 'Surveiller, détecter, qualifier et aider à répondre aux incidents'], correct: 2 },
+      { theme: 'SOC', q: 'À quoi sert un SIEM ?', a: ['À éteindre automatiquement tous les postes', 'À stocker des journaux sans analyse', 'À collecter, corréler et alerter sur des événements de sécurité'], correct: 2 },
+      { theme: 'SOC', q: 'Que doit contenir un playbook d\'incident ?', a: ['Des blagues pour détendre les analystes', 'Une seule action générique pour tous les cas', 'Des étapes, rôles, critères d\'escalade et communications attendues'], correct: 2 },
+      { theme: 'SOC', q: 'Quel est le but du triage d\'alerte ?', a: ['Ignorer les alertes bruyantes', 'Fermer toutes les alertes anciennes', 'Déterminer priorité, véracité et prochaines actions'], correct: 2 },
+      { theme: 'SOC', q: 'Pourquoi enrichir une alerte avec du renseignement menace ?', a: ['Pour rendre le ticket plus long', 'Pour remplacer l\'analyse humaine', 'Pour contextualiser des indicateurs et mieux évaluer le risque'], correct: 2 },
+      { theme: 'SOC', q: 'Quelle action est pertinente après confinement d\'un poste compromis ?', a: ['Le remettre en production sans analyse', 'Supprimer tous les journaux', 'Préserver les preuves et lancer éradication puis remédiation'], correct: 2 },
+      { theme: 'SOC', q: 'Qu\'est-ce qu\'un faux positif ?', a: ['Une attaque réussie', 'Un incident volontairement caché', 'Une alerte qui ne correspond pas à une activité malveillante réelle'], correct: 2 },
+      { theme: 'IA', q: 'Qu\'est-ce que le prompt injection ?', a: ['Un câble réseau spécial IA', 'Une optimisation automatique du processeur', 'Une tentative de détourner les instructions ou sorties d\'un modèle'], correct: 2 },
+      { theme: 'IA', q: 'Pourquoi filtrer les données utilisées pour entraîner un modèle ?', a: ['Pour supprimer toute diversité utile', 'Pour garantir que le modèle sera toujours parfait', 'Pour limiter données sensibles, biais dangereux et contenus empoisonnés'], correct: 2 },
+      { theme: 'IA', q: 'Quel risque concerne les sorties d\'un assistant IA ?', a: ['Elles sont toujours juridiquement validées', 'Elles remplacent toute revue métier', 'Elles peuvent être plausibles mais fausses ou divulguer des informations'], correct: 2 },
+      { theme: 'IA', q: 'À quoi sert le red teaming IA ?', a: ['À choisir la couleur de l\'interface', 'À entraîner uniquement les commerciaux', 'À tester abus, contournements, fuites et comportements dangereux'], correct: 2 },
+      { theme: 'IA', q: 'Quel contrôle réduit le risque de fuite via un outil IA ?', a: ['Copier tous les secrets dans les prompts', 'Autoriser seulement les prompts anonymes sans règles', 'Définir des règles de données, masquage et journalisation adaptée'], correct: 2 },
+      { theme: 'IA', q: 'Que signifie garder un humain dans la boucle ?', a: ['Empêcher toute automatisation', 'Valider uniquement la vitesse de réponse', 'Prévoir une revue humaine pour les décisions sensibles'], correct: 2 },
+      { theme: 'IA', q: 'Comment limiter les effets d\'une hallucination IA dans un processus critique ?', a: ['Faire confiance à la réponse la plus longue', 'Demander deux fois au même modèle puis valider automatiquement', 'Exiger sources, contrôles métier et validation humaine avant action'], correct: 2 },
+      { theme: 'IA', q: 'Pourquoi surveiller un modèle en production ?', a: ['Pour admirer ses réponses', 'Pour éviter toute mise à jour future', 'Pour détecter dérive, abus, erreurs et incidents de sécurité'], correct: 2 }
+    ];
+
+    let snake, direction, nextDirection, food, gameTimer, running, paused, asked, score, selectedQuestions;
+
+    function shuffle(items) {
+      return [...items].sort(() => Math.random() - 0.5);
+    }
+
+    function resetGame() {
+      snake = [{ x: 12, y: 12 }, { x: 11, y: 12 }, { x: 10, y: 12 }];
+      direction = { x: 1, y: 0 };
+      nextDirection = { ...direction };
+      asked = 0;
+      score = 0;
+      running = false;
+      paused = true;
+      selectedQuestions = shuffle(questionBank).slice(0, targetQuestions);
+      placeFood();
+      updateStats();
+      draw();
+    }
+
+    function updateStats() {
+      scoreEl.textContent = score;
+      progressEl.textContent = `${asked}/${targetQuestions}`;
+    }
+
+    function placeFood() {
+      do {
+        food = { x: Math.floor(Math.random() * gridSize), y: Math.floor(Math.random() * gridSize) };
+      } while (snake.some(segment => segment.x === food.x && segment.y === food.y));
+    }
+
+    function startGame() {
+      if (asked >= targetQuestions) resetGame();
+      overlay.classList.remove('show');
+      paused = false;
+      running = true;
+      clearInterval(gameTimer);
+      gameTimer = setInterval(step, tickMs);
+    }
+
+    function step() {
+      if (paused || !running) return;
+      direction = nextDirection;
+      const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+
+      if (head.x < 0 || head.y < 0 || head.x >= gridSize || head.y >= gridSize || snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+        showGameOver();
+        return;
+      }
+
+      snake.unshift(head);
+      if (head.x === food.x && head.y === food.y) {
+        paused = true;
+        showQuestion(selectedQuestions[asked]);
+      } else {
+        snake.pop();
+      }
+      draw();
+    }
+
+    function draw() {
+      ctx.fillStyle = '#071524';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = 'rgba(56, 232, 255, 0.06)';
+      for (let i = 0; i <= gridSize; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * tile, 0);
+        ctx.lineTo(i * tile, canvas.height);
+        ctx.moveTo(0, i * tile);
+        ctx.lineTo(canvas.width, i * tile);
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = '#ffd166';
+      ctx.fillRect(food.x * tile + 4, food.y * tile + 4, tile - 8, tile - 8);
+      ctx.fillStyle = '#4dff91';
+      snake.forEach((segment, index) => {
+        ctx.fillStyle = index === 0 ? '#38e8ff' : '#4dff91';
+        ctx.fillRect(segment.x * tile + 2, segment.y * tile + 2, tile - 4, tile - 4);
+      });
+    }
+
+    function showQuestion(question) {
+      overlay.classList.add('show');
+      const answers = question.a.map((text, index) => ({ text, index }));
+      modalContent.innerHTML = `
+        <span class="badge">Question ${asked + 1}/10 · ${question.theme}</span>
+        <h2 id="modalTitle">${question.q}</h2>
+        <p>Choisis la réponse la plus correcte pour reprendre le serpent.</p>
+        <div class="answers">
+          ${answers.map(answer => `<button class="answer" data-index="${answer.index}">${answer.text}</button>`).join('')}
+        </div>`;
+      modalContent.querySelectorAll('.answer').forEach(button => button.addEventListener('click', () => answerQuestion(Number(button.dataset.index))));
+    }
+
+    function answerQuestion(index) {
+      const question = selectedQuestions[asked];
+      const isCorrect = index === question.correct;
+      if (isCorrect) score++;
+      asked++;
+      updateStats();
+
+      modalContent.querySelectorAll('.answer').forEach(button => {
+        const answerIndex = Number(button.dataset.index);
+        button.disabled = true;
+        if (answerIndex === question.correct) button.classList.add('correct');
+        if (answerIndex === index && !isCorrect) button.classList.add('wrong');
+      });
+
+      setTimeout(() => {
+        if (asked >= targetQuestions) showFinalScore();
+        else {
+          placeFood();
+          draw();
+          overlay.classList.remove('show');
+          paused = false;
+        }
+      }, 900);
+    }
+
+    function showFinalScore() {
+      running = false;
+      paused = true;
+      clearInterval(gameTimer);
+      const validated = score > 8;
+      overlay.classList.add('show');
+      modalContent.innerHTML = `
+        <span class="badge">Résultat final</span>
+        <h2 id="modalTitle">Score : ${score}/10</h2>
+        <div class="result ${validated ? 'validated' : 'not-validated'}">${validated ? 'Compétences validées' : 'Compétences à consolider'}</div>
+        <p>${validated ? 'Excellent réflexe cyber : tu as validé le parcours.' : 'Rejoue pour renforcer les fondamentaux IAM, GRC, SOC et IA.'}</p>
+        <button id="restartButton">Rejouer</button>`;
+      document.getElementById('restartButton').addEventListener('click', () => { resetGame(); startGame(); });
+    }
+
+    function showGameOver() {
+      running = false;
+      paused = true;
+      clearInterval(gameTimer);
+      overlay.classList.add('show');
+      modalContent.innerHTML = `
+        <span class="badge">Collision détectée</span>
+        <h2 id="modalTitle">Le serpent a touché un mur ou lui-même.</h2>
+        <p>Score cyber actuel : ${score}/${asked}. Relance la mission pour tenter les 10 questions.</p>
+        <button id="retryButton">Réessayer</button>`;
+      document.getElementById('retryButton').addEventListener('click', () => { resetGame(); startGame(); });
+    }
+
+    function changeDirection(dx, dy) {
+      if (direction.x + dx === 0 && direction.y + dy === 0) return;
+      nextDirection = { x: dx, y: dy };
+    }
+
+    document.addEventListener('keydown', event => {
+      const key = event.key.toLowerCase();
+      if (['arrowup', 'z', 'w'].includes(key)) changeDirection(0, -1);
+      if (['arrowdown', 's'].includes(key)) changeDirection(0, 1);
+      if (['arrowleft', 'q', 'a'].includes(key)) changeDirection(-1, 0);
+      if (['arrowright', 'd'].includes(key)) changeDirection(1, 0);
+      if (key === ' ') startGame();
+    });
+
+    startButton.addEventListener('click', startGame);
+
+    resetGame();
+    modalContent.innerHTML = `
+      <span class="badge">Cyber Academy</span>
+      <h2 id="modalTitle">Prêt pour la validation gamifiée ?</h2>
+      <p>Pilote le serpent, mange 10 briques et réponds aux questions. Plus de 8 bonnes réponses sur 10 affichera « Compétences validées ».</p>
+      <button id="launchButton">Lancer le jeu</button>`;
+    document.getElementById('launchButton').addEventListener('click', startGame);
+  </script>
+</body>
+</html>
